@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from scipy.io import savemat
 
 
 parser = argparse.ArgumentParser()
@@ -27,7 +28,8 @@ class ODEfunc(nn.Module):
 
     def __init__(self, dim, nhidden):
         super(ODEfunc, self).__init__()
-        self.elu = nn.ELU(inplace=False)
+        # self.elu = nn.ELU(inplace=False)
+        self.elu = nn.Tanh()
         self.fc1 = nn.Linear(2*dim, nhidden)
         self.fc2 = nn.Linear(nhidden, nhidden)
         self.fc3 = nn.Linear(nhidden, dim)
@@ -80,17 +82,26 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
     
+    torch.random.manual_seed(2021) # Set random seed for repeatability package
+    
     data_dim = 1
     dim = data_dim
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
  
     #download data
-    z0 = torch.tensor(np.load('data./z0.npy')).float().to(device)
-    z = torch.tensor(np.load('data./z.npy')).float().to(device)
-    samp_ts = torch.tensor(np.load('data./samp_ts.npy')).float().to(device)
+    z0 = torch.tensor(np.load('data/z0.npy')).float().to(device)
+    z = torch.tensor(np.load('data/z.npy')).float().to(device)
+    samp_ts = torch.tensor(np.load('data/samp_ts.npy')).float().to(device)
     
     # model
-    nhidden = 20
+    if args.experiment_no == 1:
+        nhidden = 15
+    elif args.experiment_no == 2:
+        nhidden = 20
+    elif args.experiment_no == 3:
+        nhidden = 25
+    else:
+        nhidden = 20
     
     feature_layers = [ODEBlock(ODEfunc(dim, nhidden), samp_ts)]
     model = nn.Sequential(*feature_layers).to(device)
@@ -138,6 +149,19 @@ if __name__ == '__main__':
     np.save(filename+'loss_arr.npy', loss_arr)
     np.save(filename+'time_arr.npy', time_arr)
     torch.save(model, filename+'model.pth')
+    names = []
+    params = []
+    params_orig = []
+    for name,param in model.named_parameters():
+        names.append(name)
+        params.append(param.detach().numpy())
+        params_orig.append(param)
+    for name,param in model.named_buffers():
+        names.append(name)
+        params.append(param.detach().numpy())
+                        
+    nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    savemat(filename+'model.mat',nn1)
     
        
         

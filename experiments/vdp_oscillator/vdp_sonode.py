@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from scipy.io import savemat
 
 
 parser = argparse.ArgumentParser()
@@ -97,13 +98,15 @@ if __name__ == '__main__':
     data_dim = 1
     dim = data_dim
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
+    
+    torch.random.manual_seed(20+args.experiment_no) # Set random seed for repeatability package
 
     # model
     
         
     # making sampled data to fit
-    full_z = torch.load('data./position_data.pt')
-    full_ts = torch.load('data./time_data.pt')
+    full_z = torch.load('data/position_data.pt')
+    full_ts = torch.load('data/time_data.pt')
     
     train_z = full_z[:args.ntrainpoints]
     train_ts = full_ts[:args.ntrainpoints]
@@ -171,6 +174,20 @@ if __name__ == '__main__':
     np.save(filename+'nfe_arr.npy', nfe_arr)
     np.save(filename+'loss_arr.npy', loss_arr)
     np.save(filename+'time_arr.npy' , time_arr)
+    
+    names = []
+    params = []
+    params_orig = []
+    for name,param in model.named_parameters():
+        names.append(name)
+        params.append(param.detach().numpy())
+        params_orig.append(param)
+    for name,param in model.named_buffers():
+        names.append(name)
+        params.append(param.detach().numpy())
+                        
+    nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    savemat(filename+'model.mat',nn1)
 
     
     # test

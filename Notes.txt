@@ -1,0 +1,5 @@
+# To create the figures, the following two commands must be executed:
+
+sudo apt install texlive texlive-latex-extra texlive-fonts-recommended dvipng
+pip install latex
+

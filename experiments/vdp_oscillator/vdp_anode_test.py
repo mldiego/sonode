@@ -93,8 +93,8 @@ if __name__ == '__main__':
     
         
     # making sampled data to fit
-    full_z = torch.load('data./position_data.pt')
-    full_ts = torch.load('data./test_time_data.pt')
+    full_z = torch.load('data/position_data.pt')
+    full_ts = torch.load('data/test_time_data.pt')
 
     
     

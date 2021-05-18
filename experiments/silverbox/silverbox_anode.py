@@ -12,6 +12,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from scipy.io import savemat
 
 
 parser = argparse.ArgumentParser()
@@ -88,7 +89,7 @@ class ODEfunc(nn.Module):
         cutoff = data_dim
         x = z[:cutoff]
         a = z[cutoff:]
-        t_ = t.detach().numpy()[0]
+        t_ = t.detach().numpy()
         v1 = torch.tensor([v1_func(t_)]).float()
         z_ = torch.cat((x, 0.01*x**3, a, v1))
         out = self.fc(z_)
@@ -131,6 +132,9 @@ if __name__ == '__main__':
         os.makedirs('./'+filename)
     except FileExistsError:
         pass
+    
+    torch.random.manual_seed(2020+args.experiment_no) # Set random seed for repeatability package
+    
     data_dim = 1
     dim = data_dim + args.extra_dim
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
@@ -139,7 +143,7 @@ if __name__ == '__main__':
     # making time samples
     samp_ts_array = np.arange(args.npoints)
     samp_ts = torch.tensor(samp_ts_array).float()
-    samp_ts = samp_ts.reshape(args.npoints, 1)
+    # samp_ts = samp_ts.reshape(args.npoints, 1)
 
     z0 = v2_tensor[0].to(device)    
     
@@ -197,6 +201,20 @@ if __name__ == '__main__':
     np.save(filename+'nfe_arr.npy', nfe_arr)
     np.save(filename+'loss_arr.npy', loss_arr)
     np.save(filename+'time_arr.npy', time_arr)
+    
+    names = []
+    params = []
+    params_orig = []
+    for name,param in model.named_parameters():
+        names.append(name)
+        params.append(param.detach().numpy())
+        params_orig.append(param)
+    for name,param in model.named_buffers():
+        names.append(name)
+        params.append(param.detach().numpy())
+                        
+    nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    savemat(filename+'model.mat',nn1)
     
     if args.visualise:
         model = torch.load(filename+'model.pth')

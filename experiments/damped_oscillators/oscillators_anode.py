@@ -5,6 +5,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from scipy.io import savemat
+
 
 
 parser = argparse.ArgumentParser()
@@ -28,7 +30,8 @@ class ODEfunc(nn.Module):
 
     def __init__(self, dim, nhidden):
         super(ODEfunc, self).__init__()
-        self.elu = nn.ELU(inplace=False)
+        # self.elu = nn.ELU(inplace=False)
+        self.elu = nn.Tanh()
         self.fc1 = nn.Linear(dim, nhidden)
         self.fc2 = nn.Linear(nhidden, nhidden)
         self.fc3 = nn.Linear(nhidden, dim)
@@ -81,13 +84,15 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
     
+    torch.random.manual_seed(2021) # Set random seed for repeatability package
+    
     dim = 2 + args.extra_dim
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
  
     #download data
-    z0 = torch.tensor(np.load('data./z0.npy')).float().to(device)
-    z_in = torch.tensor(np.load('data./z.npy')).float().to(device)
-    samp_ts = torch.tensor(np.load('data./samp_ts.npy')).float().to(device)
+    z0 = torch.tensor(np.load('data/z0.npy')).float().to(device)
+    z_in = torch.tensor(np.load('data/z.npy')).float().to(device)
+    samp_ts = torch.tensor(np.load('data/samp_ts.npy')).float().to(device)
     
     cutoff = 30
     x0 = z0[:cutoff]
@@ -108,7 +113,16 @@ if __name__ == '__main__':
     ids = ids.repeat(cutoff, 1)
     
     # model
-    nhidden = 20
+    if args.experiment_no == 1:
+        nhidden = 15
+    elif args.experiment_no == 2:
+        nhidden = 20
+    elif args.experiment_no == 3:
+        nhidden = 25
+    elif args.experiment_no == 5:
+        nhidden = 5
+    else:
+        nhidden = 20
     
     feature_layers = [ODEBlock(ODEfunc(dim, nhidden), samp_ts, ids)]
     model = nn.Sequential(*feature_layers).to(device)
@@ -156,6 +170,31 @@ if __name__ == '__main__':
     np.save(filename+'loss_arr.npy', loss_arr)
     np.save(filename+'time_arr.npy', time_arr)
     torch.save(model, filename+'model.pth')
+    names = []
+    params = []
+    params_orig = []
+    for name,param in model.named_parameters():
+        names.append(name)
+        params.append(param.detach().numpy())
+        params_orig.append(param)
+    for name,param in model.named_buffers():
+        names.append(name)
+        params.append(param.detach().numpy())
+        
+    if nhidden == 5 and dim == 5: # For some reason, cannot save (20,20) matrix...
+        w1 = params[0]
+        b1 = params[1]
+        w2 = params[2]
+        b2 = params[3]
+        w3 = params[4]
+        b3 = params[5]
+        nn1 = dict({'w1':w1,'b1':b1,'w2':w2,'b2':b2,'w3':w3,'b3':b3,'names':names,'mse':loss})
+    else:
+        nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    savemat(filename+'model.mat',nn1)
+                        
+    # nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    # savemat(filename+'model.mat',nn1)
     
        
         
