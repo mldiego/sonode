@@ -10,13 +10,14 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from scipy.io import savemat
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--tol', type=float, default=1e-3)
 parser.add_argument('--adjoint', type=eval, default=False)
 parser.add_argument('--visualise', type=eval, default=True)
-parser.add_argument('--niters', type=int, default=1000)
+parser.add_argument('--niters', type=int, default=300)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--npoints', type=int, default=1000)
@@ -86,7 +87,7 @@ class ODEfunc(nn.Module):
         cutoff = data_dim
         x = z[:cutoff]
         a = z[cutoff:]
-        t_ = t.detach().numpy()[0]
+        t_ = t.detach().numpy()
         acc1 = torch.tensor([acc1_func(t_)]).float()
         z_ = torch.cat((x, a, acc1))
         out = self.fc(z_)
@@ -133,11 +134,13 @@ if __name__ == '__main__':
     dim = data_dim + args.extra_dim
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
     
+    torch.random.manual_seed(2021+args.experiment_no) # Set random seed for repeatability package
+    
     # model
     # making time samples
     samp_ts_array = np.arange(args.npoints)
     samp_ts = torch.tensor(samp_ts_array).float()
-    samp_ts = samp_ts.reshape(args.npoints, 1)
+    # samp_ts = samp_ts.reshape(args.npoints, 1)
 
     z0 = acc2_tensor[0].to(device)
     
@@ -195,6 +198,20 @@ if __name__ == '__main__':
     np.save(filename+'nfe_arr.npy', nfe_arr)
     np.save(filename+'loss_arr.npy', loss_arr)
     np.save(filename+'time_arr.npy', time_arr)
+    
+    names = []
+    params = []
+    params_orig = []
+    for name,param in model.named_parameters():
+        names.append(name)
+        params.append(param.detach().numpy())
+        params_orig.append(param)
+    for name,param in model.named_buffers():
+        names.append(name)
+        params.append(param.detach().numpy())
+                        
+    nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    savemat(filename+'model.mat',nn1)
     
     if args.visualise:
         model = torch.load(filename+'model.pth')
