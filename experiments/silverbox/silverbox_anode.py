@@ -133,7 +133,7 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
     
-    torch.random.manual_seed(2020+args.experiment_no) # Set random seed for repeatability package
+    torch.random.manual_seed(202+args.experiment_no) # Set random seed for repeatability package
     
     data_dim = 1
     dim = data_dim + args.extra_dim

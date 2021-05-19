@@ -16,7 +16,7 @@ parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--experiment_no', type=int, default=1)
 parser.add_argument('--nhidden', type=int, default = 5)
-parser.add_argument('--extra_dim', type=int, default = 1)
+parser.add_argument('--extra_dim', type=int, default = 3)
 args = parser.parse_args()
 
 if args.adjoint:
@@ -172,7 +172,11 @@ if __name__ == '__main__':
         b2 = params[3]
         w3 = params[4]
         b3 = params[5]
-        nn1 = dict({'w1':w1,'b1':b1,'w2':w2,'b2':b2,'w3':w3,'b3':b3,'names':names,'mse':loss})
+        w4 = params[6]
+        b4 = params[7]
+        w5 = params[8]
+        b5 = params[9]
+        nn1 = dict({'w1':w1,'b1':b1,'w2':w2,'b2':b2,'w3':w3,'b3':b3,'w4':w4,'b4':b4,'w5':w5,'b5':b5,'names':names,'mse':loss})
     else:
         nn1 = dict({'Wb':params,'names':names,'mse':loss})
                         
