@@ -13,10 +13,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--tol', type=float, default=1e-3)
 parser.add_argument('--adjoint', type=eval, default=False)
 parser.add_argument('--visualise', type=eval, default=True)
-parser.add_argument('--niters', type=int, default=1000)
+parser.add_argument('--niters', type=int, default=100)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--gpu', type=int, default=0)
-parser.add_argument('--experiment_no', type=int, default=1)
+parser.add_argument('--experiment_no', type=int, default=5)
 parser.add_argument('--ntrainpoints', type=int, default=70)
 parser.add_argument('--extra_dim', type=int, default=1)
 args = parser.parse_args()
@@ -166,7 +166,8 @@ if __name__ == '__main__':
     print('\n')
     print('Training complete after {} iterations.'.format(itr))
     loss = min_loss.detach().numpy()
-    results[0][1][int(args.experiment_no-1)] = loss
+    if args.experiment_no < 4:
+        results[0][1][int(args.experiment_no-1)] = loss
     print('Train MSE = ' +str(loss))
     print('NFE = ' +str(model[1].nfe))
     print('Total time = '+str(end_time-start_time))
@@ -201,10 +202,10 @@ if __name__ == '__main__':
     pred_z_test = pred_z.gather(1, ids)
     pred_x_test = pred_z_test[args.ntrainpoints:]
     test_loss = loss_func(pred_x_test, test_z).detach().numpy()
-    results[1][1][int(args.experiment_no-1)] = test_loss
+    # results[1][1][int(args.experiment_no-1)] = test_loss
     print('Test MSE = '+str(test_loss))
     
-    np.save('results.npy', results)
+    # np.save('results.npy', results)
     
     if args.visualise:
         ts_array = full_ts.detach().numpy().reshape(len(full_ts))
