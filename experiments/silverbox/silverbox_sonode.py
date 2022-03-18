@@ -133,7 +133,7 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
     
-    torch.random.manual_seed(2020+args.experiment_no) # Set random seed for repeatability package
+    # torch.random.manual_seed(2020+args.experiment_no) # Set random seed for repeatability package
     
     data_dim = 1
     dim = data_dim
@@ -213,8 +213,8 @@ if __name__ == '__main__':
         names.append(name)
         params.append(param.detach().numpy())
                         
-    nn1 = dict({'Wb':params,'names':names,'mse':loss})
-    savemat(filename+'model.mat',nn1)
+    # nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    # savemat(filename+'model.mat',nn1)
     
     
     if args.visualise:
@@ -229,5 +229,5 @@ if __name__ == '__main__':
         plt.ylabel('V2')
         plt.legend(loc='upper left')
         plt.title('SONODE Silverbox Experiment No. = ' + str(args.experiment_no))
-        plt.savefig(filename+'vis.png')
+        # plt.savefig(filename+'vis.png')
     

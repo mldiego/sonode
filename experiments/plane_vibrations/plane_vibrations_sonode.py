@@ -17,11 +17,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--tol', type=float, default=1e-3)
 parser.add_argument('--adjoint', type=eval, default=False)
 parser.add_argument('--visualise', type=eval, default=True)
-parser.add_argument('--niters', type=int, default=1000)
+parser.add_argument('--niters', type=int, default=100)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--npoints', type=int, default=1000)
-parser.add_argument('--experiment_no', type=int, default=1)
+parser.add_argument('--experiment_no', type=int, default=4)
 args = parser.parse_args()
 
 if args.adjoint:
@@ -92,6 +92,29 @@ class ODEfunc(nn.Module):
         out = self.fc(z_)
         return torch.cat((v, out))
     
+class ODEfunc2(nn.Module):
+
+    def __init__(self, hdim, dim):
+        super(ODEfunc2, self).__init__()
+        self.fc = nn.Linear(2*dim, hdim)
+        self.tanh = nn.ELU()
+        self.fc2 = nn.Linear(hdim,dim)
+        self.nfe = 0
+
+    def forward(self, t, z):
+        self.nfe += 1
+        cutoff = int(len(z)/2)
+        x = z[:cutoff]
+        v = z[cutoff:]
+        # t_ = t.detach().numpy()
+        # acc1 = torch.tensor([acc1_func(t_)]).float()
+        z_ = torch.cat((x, v))
+        out = self.fc(z_)
+        out = self.tanh(out)
+        out = self.fc2(out)
+        # out = self.tanh(out)
+        return torch.cat((v, out))
+    
 
 class ODEBlock(nn.Module):
 
@@ -131,6 +154,7 @@ if __name__ == '__main__':
         pass
     data_dim = 1
     dim = data_dim
+    # hdim = 5
     #dim does not equal data_dim for ANODEs where they are augmented with extra zeros
     
     torch.random.manual_seed(2021+args.experiment_no) # Set random seed for repeatability package
@@ -211,8 +235,8 @@ if __name__ == '__main__':
         names.append(name)
         params.append(param.detach().numpy())
                         
-    nn1 = dict({'Wb':params,'names':names,'mse':loss})
-    savemat(filename+'model.mat',nn1)
+    # nn1 = dict({'Wb':params,'names':names,'mse':loss})
+    # savemat(filename+'model.mat',nn1)
     
     if args.visualise:
         model = torch.load(filename+'model.pth')
@@ -226,7 +250,7 @@ if __name__ == '__main__':
         plt.ylabel('a2')
         plt.legend(loc='upper left')
         plt.title('SONODE Plane Vibrations Experiment No. = ' + str(args.experiment_no))
-        plt.savefig(filename+'vis.png')
+        # plt.savefig(filename+'vis.png')
     
     
     
